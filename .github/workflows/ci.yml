@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # NOTE: pip caching is intentionally disabled. The setup-python pip-cache
+      # post-step (cache save) was failing and failing the whole job even though
+      # install, lint, and tests all passed. Dropping the cache trades a little
+      # install time for a reliably green run.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements/ci.txt
+
+      - name: Lint (ruff)
+        run: ruff check src/ scripts/ tests/
+
+      - name: Format check (black)
+        run: black --check src/ scripts/ tests/
+
+      - name: Unit tests
+        # Excludes: integration (full-training, real artifact loads, AppTest render),
+        #           slow / heavy (model training, RL runs), docking (Vina/GNINA binary).
+        # Torch-dependent tests (test_generator_*.py, test_rl_reward.py TestNLLBatch)
+        # auto-skip via pytest.importorskip("torch") inside each file.
+        # TestDataLoaders artifact-dependent tests auto-skip via conftest.py when
+        # models/qsar/general/metadata.json is absent (gitignored in CI).
+        run: pytest -m "not integration and not slow and not docking and not heavy" -q --tb=short

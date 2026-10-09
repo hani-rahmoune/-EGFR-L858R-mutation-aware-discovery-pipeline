@@ -1,0 +1,13 @@
+# CI-only deps: base + test tools + the ML libs needed to import src/ modules.
+# Excludes: torch, optuna, mlflow, umap-learn, matplotlib, seaborn, tqdm
+# (all offline-training-only; not needed to collect and run unit tests).
+-r base.txt
+pytest>=7.4.0
+pytest-cov>=4.1.0
+# Linters pinned to exact versions so CI matches local runs. Unpinned ranges
+# let the runner install newer ruff/black that flag or reformat code which
+# passed locally, turning CI red without any code change.
+ruff==0.15.20
+black==24.10.0
+xgboost==3.2.0
+lightgbm>=4.1.0
